@@ -1,0 +1,20 @@
+---
+services:
+  vlc:
+    container_name: vlc
+    image: fwinkler79/arm64v8-vlc-docker:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    privileged: true                                                              # Required for access to USB device to work.
+    user: 1000:1000
+    environment:
+      - TZ=Europe/Berlin
+    ports:
+      - 4212:4212
+    command: --intf telnet --telnet-host localhost --telnet-port 4212 --telnet-password vlcplayer -A alsa --alsa-audio-device sysdefault:CARD=vc4hdmi0
+    volumes:
+      - /var/run/dbus:/var/run/dbus:ro                                            # Required to get access to Bluetooth stack
+    devices:
+      - /dev/snd:/dev/snd  
+    restart: unless-stopped
