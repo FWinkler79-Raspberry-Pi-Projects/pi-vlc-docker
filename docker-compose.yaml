@@ -2,10 +2,10 @@
 services:
   vlc:
     container_name: vlc
-    image: fwinkler79/arm64v8-vlc-docker:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: fwinkler79/arm64v8-vlc-docker:1.0.0
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     privileged: true                                                              # Required for access to USB device to work.
     user: 1000:1000
     environment:
