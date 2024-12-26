@@ -9,7 +9,7 @@ services:
       - TZ=Europe/Berlin
       - VLC_UID=1000                             # UID of user on docker host. Find out with 'id'
       - AUDIO_GID=29                             # GID of audio group on docker host. Find out with 'getent group audio' or 'cat /etc/group | grep audio'
-    command: --intf telnet --telnet-host localhost --telnet-port 4212 --telnet-password vlcplayer -A alsa --alsa-audio-device sysdefault:CARD=vc4hdmi0
+    command: --intf telnet --telnet-host localhost --telnet-port 4212 --telnet-password <password> -A alsa --alsa-audio-device sysdefault:CARD=vc4hdmi0
     #ports:
     #  - 4212:4212
     #volumes:
