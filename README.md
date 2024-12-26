@@ -4,9 +4,11 @@ A VLC docker image for Raspberry-Pi to play back audio and use as an Audio outpu
 
 - [What is Pi-VLC-Docker?](#what-is-pi-vlc-docker)
 - [How it works](#how-it-works)
-- [Building](#building)
+- [Usage](#usage)
+- [Building the Image](#building-the-image)
 - [Dockerfile](#dockerfile)
   - [❗Mapping `audio` Group Inside the Docker Container](#mapping-audio-group-inside-the-docker-container)
+- [References](#references)
 
 ## What is Pi-VLC-Docker?
 
@@ -25,7 +27,38 @@ This can for example be used in a `docker-compose.yaml`, to start VLC with the `
 
 Many other use cases are possible, however.
 
-## Building
+## Usage
+
+The simplest way to consume this image is by using Docker Compose. Below is a sample how to use it.
+
+```yaml
+---
+services:
+  vlc:
+    container_name: vlc
+    image: fwinkler79/arm64v8-vlc-docker:1.0.0
+    privileged: true                             # Required for access to USB device to work.
+    network_mode: host
+    environment:
+      - TZ=Europe/Berlin
+      - VLC_UID=1000                             # UID of user on docker host. Find out with 'id'
+      - AUDIO_GID=29                             # GID of audio group on docker host. Find out with 'getent group audio' or 'cat /etc/group | grep audio'
+    command: --intf telnet --telnet-host localhost --telnet-port 4212 --telnet-password <password> -A alsa --alsa-audio-device sysdefault:CARD=vc4hdmi0
+    devices:
+      - /dev/snd:/dev/snd  
+    restart: unless-stopped
+```
+
+A few things are noteworthy: 
+1. `privileged: true` - use to run with elevated access rights.
+2. `network_mode: host` - use if you need the DNS resolution of the Docker host or if plan to expose the Telnet interface of `cvlc` as shown here. 
+   Note: instead you could also simply expose the configured `telnet` port.
+3. `VLC_UID=1000` - maps the user on Docker host into the container.
+4. `AUDIO_GID=29` - maps the `audio` group ID on the Docker host into the container.
+5. `command: --intf telnet --telnet-host localhost --telnet-port 4212 --telnet-password vlcplayer -A alsa --alsa-audio-device sysdefault:CARD=vc4hdmi0` - this specifies the startup command of the container. This will be appended to `cvlc` and will result in the telnet interface to be exposed on port `4212` with the given password. The ALSA audio device is set to the `HDMI-0` port, use `aplay -L | grep sysdefault` to list devices.
+6. `devices: /dev/snd:/dev/snd` - maps the sound devices of the Docker host into the container.
+
+## Building the Image
 
 To build the image use the `build.sh` script and execute it in the folder where the `Dockerfile` resides by executing:
 
@@ -33,7 +66,7 @@ To build the image use the `build.sh` script and execute it in the folder where 
 ./build.sh
 ```
 
-This executes a Docker cross-platform build targeted at arm64 Linux devices (e.g. Raspberry Pi).
+This executes a Docker cross-platform build targeted at ARM64 Linux devices (e.g. Raspberry Pi).
 
 ## Dockerfile 
 
@@ -64,8 +97,14 @@ ENTRYPOINT ["cvlc"]
 CMD ["--version"]
 ```
 
-### ❗Mapping `audio` Group Inside the Docker Container
+The environment variables `VLC_UID` and `AUDIO_GID` are used to map the user ID and `audio` group ID of the Docker host into the container.
+`HOME` defines the home directory of the user named `vlc`, which is used to execute VLC. (**Note:** VLC cannot be run as `root`.)
 
+After updating the `apk` index, a system `upgrade` is executed. After that VLC is installed. The `shadow` package is installed next which contains the `groupmod` command. The `groupmod` command is used to adjust the group ID of the `audio` group inside the container to have the same ID as the `AUDIO_GID` that was passed in via the environment. Next, the `vlc` user is defined and added to the `audio` group. Finally, the `alsa-utils` are installed, to be able to test connectivity to and list sound devices, and the cache of APK is cleaned to remove any remaining installation artifacts that consume unnecessary space.
+
+`USER vlc` switches the user context to the `vlc` user, so that commands executed are executed under that user. Finally, the `ENTRYPOINT` is set to call the `cvlc` command to execute VLC on the command line.
+
+### ❗Mapping `audio` Group Inside the Docker Container
 
 When running VLC in a Docker container, the audio devices need to be mapped into the Docker container. This is typically done by mapping the `/dev/snd` folder as a `device` in e.g. your `docker-compose.yaml`, e.g. like this:
 
@@ -92,3 +131,7 @@ cat /etc/group | grep audio
 ```
 
 See also the [`docker-compose.yaml`](docker-compose.yaml) as reference.
+
+## References
+
+* [Specify Audio Output Device on Raspberry-Pi](https://www.raspberrypi.com/documentation/computers/os.html#specify-an-audio-output-device)
