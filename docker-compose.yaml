@@ -3,17 +3,17 @@ services:
   vlc:
     container_name: vlc
     image: fwinkler79/arm64v8-vlc-docker:1.0.0
-    privileged: true                                                              # Required for access to USB device to work.
+    privileged: true                             # Required for access to USB device to work.
     network_mode: host
     environment:
       - TZ=Europe/Berlin
-      - VLC_UID=1000                                                              # UID of user on docker host. Find out with 'id'
-      - AUDIO_GID=29                                                              # GID of audio group on docker host. Find out with 'getent group audio'
+      - VLC_UID=1000                             # UID of user on docker host. Find out with 'id'
+      - AUDIO_GID=29                             # GID of audio group on docker host. Find out with 'getent group audio' or 'cat /etc/group | grep audio'
+    command: --intf telnet --telnet-host localhost --telnet-port 4212 --telnet-password vlcplayer -A alsa --alsa-audio-device sysdefault:CARD=vc4hdmi0
     #ports:
     #  - 4212:4212
-    command: --intf telnet --telnet-host localhost --telnet-port 4212 --telnet-password vlcplayer -A alsa --alsa-audio-device sysdefault:CARD=vc4hdmi0
-    volumes:
-      - /var/run/dbus:/var/run/dbus:ro                                            # Required to get access to Bluetooth stack
+    #volumes:
+    # - /var/run/dbus:/var/run/dbus:ro           # Required to get access to Bluetooth stack
     devices:
       - /dev/snd:/dev/snd  
     restart: unless-stopped
