@@ -3,13 +3,12 @@ services:
   vlc:
     container_name: vlc
     image: fwinkler79/arm64v8-vlc-docker:1.0.0
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
     privileged: true                                                              # Required for access to USB device to work.
-    user: 1000:1000
+    network_mode: host
     environment:
       - TZ=Europe/Berlin
+      - VLC_UID=1000                                                              # UID of user on docker host. Find out with 'id'
+      - AUDIO_GID=29                                                              # GID of audio group on docker host. Find out with 'getent group audio'
     ports:
       - 4212:4212
     command: --intf telnet --telnet-host localhost --telnet-port 4212 --telnet-password vlcplayer -A alsa --alsa-audio-device sysdefault:CARD=vc4hdmi0
